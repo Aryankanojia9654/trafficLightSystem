@@ -1,0 +1,151 @@
+ASSUME CS:CODE, DS:DATA
+
+DATA SEGMENT
+PORTA EQU 080H            ; East direction
+PORTB EQU 082H            ; West direction
+PORTC EQU 084H            ; North and South directions
+PORT_CONTROL EQU 086H     ; Control word register for 8255 PPI
+
+DATA ENDS
+
+CODE SEGMENT
+START:
+; Initialize Data Segment
+MOV AX, DATA
+MOV DS, AX
+
+; Configure all ports as output using Control Word Register
+MOV AL, 80H               ; CWR value to set all ports as output
+OUT PORT_CONTROL, AL
+
+MAIN_LOOP:
+; East-West red, North-South green
+MOV AL, 01H
+OUT PORTA, AL             ; East - Red light
+OUT PORTB, AL             ; West - Red light
+MOV AL, 42H
+OUT PORTC, AL             ; North - Green, South - Green
+CALL DELAY_LONG           ; Delay for green light
+
+; Transition to yellow on North-South
+MOV AL, 04H
+OUT PORTC, AL             ; North and South yellow lights
+CALL DELAY_SHORT
+
+; North-South red, East-West green
+MOV AL, 21H
+OUT PORTC, AL             ; North - Red, South - Red
+MOV AL, 02H
+OUT PORTA, AL             ; East - Green light
+OUT PORTB, AL             ; West - Green light
+CALL DELAY_LONG           ; Delay for green light
+
+; Transition to yellow on East-West
+MOV AL, 04H
+OUT PORTA, AL             ; East yellow light
+OUT PORTB, AL             ; West yellow light
+CALL DELAY_SHORT
+
+; Only East green, all others red
+MOV AL, 02H
+OUT PORTA, AL             ; East - Green
+MOV AL, 01H
+OUT PORTB, AL             ; West - Red
+MOV AL, 21H
+OUT PORTC, AL             ; North - Red, South - Red
+CALL DELAY_LONG
+
+; Transition to yellow for all
+MOV AL, 04H
+OUT PORTA, AL             ; East yellow
+OUT PORTB, AL             ; West yellow
+MOV AL, 84H
+OUT PORTC, AL             ; North and South yellow
+CALL DELAY_SHORT
+
+; Only North green, all others red
+MOV AL, 41H
+OUT PORTC, AL             ; North - Green, South - Red
+MOV AL, 01H
+OUT PORTB, AL             ; West - Red
+OUT PORTA, AL             ; East - Red
+CALL DELAY_LONG
+
+; Transition to yellow
+MOV AL, 04H
+OUT PORTA, AL
+OUT PORTB, AL
+MOV AL, 84H
+OUT PORTC, AL
+CALL DELAY_SHORT
+
+; Only West green, all others red
+MOV AL, 02H
+OUT PORTB, AL             ; West - Green
+MOV AL, 01H
+OUT PORTA, AL             ; East - Red
+MOV AL, 21H
+OUT PORTC, AL             ; North - Red, South - Red
+CALL DELAY_LONG
+
+; Transition to yellow
+MOV AL, 04H
+OUT PORTA, AL
+OUT PORTB, AL
+MOV AL, 84H
+OUT PORTC, AL
+CALL DELAY_SHORT
+
+; Only South green, all others red
+MOV AL, 22H
+OUT PORTC, AL             ; North - Red, South - Green
+MOV AL, 01H
+OUT PORTB, AL             ; West - Red
+OUT PORTA, AL             ; East - Red
+CALL DELAY_LONG
+
+; Transition to yellow
+MOV AL, 04H
+OUT PORTA, AL
+OUT PORTB, AL
+MOV AL, 84H
+OUT PORTC, AL
+CALL DELAY_SHORT
+
+; Loop back to start of main loop
+JMP MAIN_LOOP
+
+; Delay subroutine for longer green light duration
+DELAY_LONG:
+PUSH CX
+MOV CX, 2710H             ; 10-second delay (approx.)
+LONG_LOOP:
+CALL DELAY_MILLISECOND
+LOOP LONG_LOOP
+POP CX
+RET
+
+; Delay subroutine for shorter yellow light duration
+DELAY_SHORT:
+PUSH CX
+MOV CX, 07D0H             ; 2-second delay (approx.)
+SHORT_LOOP:
+CALL DELAY_MILLISECOND
+LOOP SHORT_LOOP
+POP CX
+RET
+
+; Delay subroutine for approx. 1 millisecond
+DELAY_MILLISECOND:
+PUSH CX
+MOV CX, 0DAH              ; Approximate 1 millisecond delay
+MS_LOOP:
+NOP
+NOP
+LOOP MS_LOOP
+POP CX
+RET
+
+CODE ENDS
+END START
+
